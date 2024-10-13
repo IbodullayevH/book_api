@@ -1,26 +1,110 @@
 import { Injectable } from '@nestjs/common';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Books } from './entities/book.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class BooksService {
-  create(createBookDto: CreateBookDto) {
-    return 'This action adds a new book';
+
+  constructor(
+    @InjectRepository(Books)
+    private bookRepository: Repository<Books>
+  ) { }
+
+
+  // create new book
+  async create(createBookDto: CreateBookDto): Promise<{ success: boolean, message: string, data?: Books }> {
+    let existBook = await this.bookRepository.findOne({
+      where: {
+        title: createBookDto.title
+      }
+    })
+
+    if (existBook) {
+      return {
+        success: false,
+        message: "Already exist book"
+      }
+    }
+
+    let newBook = this.bookRepository.create(createBookDto)
+    let savedNewBook = await this.bookRepository.save(newBook)
+
+    return {
+      success: true,
+      message: "Successfully created new book",
+      data: savedNewBook
+    }
   }
 
-  findAll() {
-    return `This action returns all books`;
+
+  // get all 
+  async findAll(): Promise<{ success: boolean, message: string, data?: Books[] }> {
+    let bookData = await this.bookRepository.find()
+
+    return {
+      success: true,
+      message: "All book data has been retrieved successfully",
+      data: bookData
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} book`;
+
+  // by id
+  findOne(id: number): Promise<Books> {
+    return this.bookRepository.findOneBy({ id });
   }
 
-  update(id: number, updateBookDto: UpdateBookDto) {
-    return `This action updates a #${id} book`;
+
+  // update book
+  async update(bookId: number, updateBookDto: UpdateBookDto): Promise<{ success: boolean, message: string, data?: Books }> {
+    let checkBook = await this.bookRepository.findOne({
+      where: {
+        id: bookId
+      }
+    });
+
+    if (!checkBook) {
+      return {
+        success: false,
+        message: 'Book not found',
+      };
+    }
+
+    await this.bookRepository.update(bookId, updateBookDto);
+    const updatedBook = await this.bookRepository.findOne({
+      where: { id: bookId }
+    });
+
+    return {
+      success: true,
+      message: 'Book updated successfully',
+      data: updatedBook,
+    };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} book`;
+
+  // delete book
+  async remove(bookId: number): Promise<{ success: boolean, message: string, data?: Books }> {
+    let checkBook = await this.bookRepository.findOne({
+      where: {
+        id: bookId
+      }
+    });
+
+    if (!checkBook) {
+      return {
+        success: false,
+        message: 'Book not found',
+      };
+    }
+    await this.bookRepository.delete(bookId);
+
+    return {
+      success: true,
+      message: 'Book deleted successfully',
+    };
   }
 }
