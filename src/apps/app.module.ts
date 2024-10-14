@@ -10,6 +10,7 @@ import { Order } from 'src/orders/entities/order.entity';
 import { OrdersModule } from 'src/orders/orders.module';
 import { CartsModule } from 'src/carts/carts.module';
 import { Cart } from 'src/carts/entities/cart.entity';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { Cart } from 'src/carts/entities/cart.entity';
     UsersModule,
     BooksModule,
     OrdersModule,
-    CartsModule
+    CartsModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService],

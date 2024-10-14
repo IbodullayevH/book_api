@@ -1,15 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
+import { Order } from 'src/orders/entities/order.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
+
+    @InjectRepository(Order)
+    private readonly orderRepository: Repository<Order>
   ) { }
 
   // create new user
@@ -49,10 +52,10 @@ export class UsersService {
 
   // get by id
   async findOne(id: number): Promise<{ success: boolean, message: string, data?: User }> {
-    let userById = await this.userRepository.findOne({ where: { id } }); 
+    let userById = await this.userRepository.findOne({ where: { id } });
 
     if (!userById) {
-      return {  
+      return {
         success: false,
         message: `User with id ${id} not found`,
       }
@@ -88,25 +91,28 @@ export class UsersService {
 
     return {
       success: true,
-      message: 'User updated successfully',
+      message: 'Your profile updated successfully',
       data: updatedUser,
     };
   }
 
   // delete user by id
-  async remove(userId: number): Promise<{ success: boolean, message: string }> {
-    let checkUser = await this.userRepository.findOne({
-      where: {
-        id: userId
-      }
+  async remove(userId: number, id: number): Promise<{ success: boolean, message: string }> {
+
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['orders'],
     });
 
-    if (!checkUser) {
+    if (!user) {
       return {
         success: false,
-        message: 'User not found',
-      };
+        message: `User with id ${id} not found`,
+      }
     }
+
+    await this.orderRepository.delete({ user: { id: user.id } });
+
 
     await this.userRepository.delete(userId);
 
@@ -116,4 +122,16 @@ export class UsersService {
     };
   }
 
+  // find by email
+  async findByEmail(email: string): Promise<User | undefined> {
+    return this.userRepository.findOne({ where: { email } });
+  }
+
+  // find by id
+  async findById(id: number): Promise<User | undefined> {
+    let userData = this.userRepository.findOne({ where: { id } });
+    // console.log(userData);
+    
+    return userData
+  }
 }
